@@ -1,0 +1,4 @@
+include COPYRIGHT
+include README.rst
+include man/NXSDataSources.1
+include man/nxsdatasources.1

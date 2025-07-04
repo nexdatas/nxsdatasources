@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title> NXSDataSources Tango Class Commands </title>
+</head>
+<body text="Black" bgcolor="White" link="Blue" vlink="Purple" alink="Red">
+<br><br><br><br>
+<Table Border=2 Cellpadding=3 CELLSPACING=0>
+	<tr bgcolor="#CCCCFF" class="TableHeadingColor">
+	<td colspan=5> <font size=+1> <center><b> NXSDataSources Class Commands </b></font></center></td>
+	<tr bgcolor="#CCCCFF" class="TableHeadingColor">
+		<td> <center><b> Name </b></center> </td>
+		<td> <center><b> Input type </b></center> </td>
+		<td> <center><b> Output type </b></center> </td>
+		<td> <center><b> Level </b></center> </td>
+		<td> <center><b> Description </b></center> </td>
+	</tr>
+	<tr>
+		<td> <a href="CmdState.html"> State </a> </td>
+		<td> DEV_VOID </td>
+		<td> DEV_STATE </td>
+		<td> OPERATOR </td>
+		<td> This command gets the device state (stored in its device_state data member) and returns it to the caller. </td>
+	</tr>
+	<tr>
+		<td> <a href="CmdStatus.html"> Status </a> </td>
+		<td> DEV_VOID </td>
+		<td> CONST_DEV_STRING </td>
+		<td> OPERATOR </td>
+		<td> This command gets the device status (stored in its device_status data member) and returns it to the caller. </td>
+	</tr>
+	<tr>
+		<td> <a href="CmdAddDataSources.html"> AddDataSources </a> </td>
+		<td> DEVVAR_STRINGARRAY </td>
+		<td> DEV_VOID </td>
+		<td> OPERATOR </td>
+		<td> adds NeXus datasources attributes from NXSConfigServer </td>
+	</tr>
+	<tr>
+		<td> <a href="CmdRemoveDataSources.html"> RemoveDataSources </a> </td>
+		<td> DEVVAR_STRINGARRAY </td>
+		<td> DEV_VOID </td>
+		<td> OPERATOR </td>
+		<td> removes NeXus datasources attributes from NXSConfigServer </td>
+	</tr>
+	<tr>
+		<td> <a href="CmdAvailableDataSources.html"> AvailableDataSources </a> </td>
+		<td> DEV_VOID </td>
+		<td> DEVVAR_STRINGARRAY </td>
+		<td> OPERATOR </td>
+		<td> provides a list of exposed datasources </td>
+	</tr>
+	<tr>
+		<td> <a href="CmdSetVariables.html"> SetVariables </a> </td>
+		<td> DEV_STRING </td>
+		<td> DEV_VOID </td>
+		<td> OPERATOR </td>
+		<td> sets  XML configuration varialbes from the given JSON string </td>
+	</tr>
+	<tr>
+		<td> <a href="CmdSetCommonBlock.html"> SetCommonBlock </a> </td>
+		<td> DEV_STRING </td>
+		<td> DEV_VOID </td>
+		<td> OPERATOR </td>
+		<td> set  CommonBlock from the given JSON string </td>
+	</tr>
+	<tr>
+		<td> <a href="CmdVariables.html"> Variables </a> </td>
+		<td> DEV_VOID </td>
+		<td> DEV_STRING </td>
+		<td> OPERATOR </td>
+		<td> Provides  JSON string with XML configuration variables </td>
+	</tr>
+	<tr>
+		<td> <a href="CmdCommonBlock.html"> CommonBlock </a> </td>
+		<td> DEV_VOID </td>
+		<td> DEV_STRING </td>
+		<td> OPERATOR </td>
+		<td> Provides  JSON string with the CommonBlock dictionary </td>
+	</tr>
+</table>
+</body>
+</html>
