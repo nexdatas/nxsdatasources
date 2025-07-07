@@ -21,12 +21,13 @@
 
 
 import weakref
+import json
 
 # from .Release import __version__
 from .StreamSet import StreamSet
 
-from nxsrecconfig.Utils import TangoUtils
-# from nxsrecconfig.Describer import Describer
+from nxsrecconfig.Utils import TangoUtils, Utils
+from nxsrecconfig.Describer import Describer
 
 
 try:
@@ -67,6 +68,19 @@ class DataSources(object):
         #: or :class:`nxsconfigserver.XMLConfigurator.XMLConfigurator`) \
         #:     configuration server proxy
         self.__configServer = None
+        #: (:obj:`dict` <:obj:`str` , :obj:`str`> ) \
+        #:    map of numpy types : NEXUS
+        self.__npTn = {"float32": "NX_FLOAT32", "float64": "NX_FLOAT64",
+                       "float": "NX_FLOAT32", "double": "NX_FLOAT64",
+                       "int": "NX_INT", "int64": "NX_INT64",
+                       "int32": "NX_INT32", "int16": "NX_INT16",
+                       "int8": "NX_INT8", "uint64": "NX_UINT64",
+                       "uint32": "NX_UINT32", "uint16": "NX_UINT16",
+                       "uint8": "NX_UINT8", "uint": "NX_UINT64",
+                       "str": "NX_CHAR",
+                       "string": "NX_CHAR", "bool": "NX_BOOLEAN"}
+
+        self.__description = None
 
     def getConfigServer(self):
         if self.__configServer is not None:
@@ -90,14 +104,69 @@ class DataSources(object):
     def availableDataSources(self):
         return self.getConfigServer().availableDataSources()
 
-    def setVariables(self, vars):
+    def setVariables(self, var):
         return
 
     def variables(self):
         return ""
 
-    def setCommonBlock(self, vars):
+    def setCommonBlock(self, cblock):
         return
 
     def commonBlock(self):
         return ""
+
+    def description(self):
+        if not self.__description:
+            self.refresh()
+        return json.dumps(self.__description)
+
+    def refresh(self):
+        dsdes = {}
+        cs = self.getConfigServer()
+        dsl = cs.availableDataSources()
+        cpl = cs.availableComponents()
+        de = Describer(cs, pyevalfromscript=True)
+        for cp in cpl:
+            try:
+                des = de.components([cp])
+                for dd in des:
+                    dsdes[dd["dsname"]] = dd
+                    #  print(dd)
+            except Exception:
+                print("ERROR", cp)
+                continue
+        missing = list(set(dsl) -set(dsdes.keys()))
+        # print(missing)
+        for mds in missing:
+            try:
+                dds = de.dataSources([mds])
+                # print("EEE", mds, dds)
+                for jdd in dds:
+                    if jdd:
+                        dd = json.loads(jdd)
+                        dstype = dd.get("dstype")
+                        shape = None
+                        dt = "float"
+                        nxtype = "NXFLOAT"
+                        if dstype == 'TANGO':
+                            source = dd["record"]
+                            shape, dt, _ = TangoUtils.getShapeTypeUnit(source)
+                            nxtype = self.__npTn[dt] \
+                                if dt in self.__npTn.keys() else nxtype
+                            # print(shape, dt, nxtype)
+                        # print("dstype",dstype)
+                        dd["shape"] = shape
+                        dd["nxtype"] = nxtype
+                        dsdes[dd["dsname"]] = dd
+                        # print(dd)
+            except Exception as e:
+                # print("ERROR", mds, e)
+                continue
+        self.__description = dsdes
+
+    def userData(self):
+        return ""
+
+    def setUserData(self, udata):
+        return
