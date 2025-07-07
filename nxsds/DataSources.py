@@ -26,7 +26,7 @@ import json
 # from .Release import __version__
 from .StreamSet import StreamSet
 
-from nxsrecconfig.Utils import TangoUtils, Utils
+from nxsrecconfig.Utils import TangoUtils
 from nxsrecconfig.Describer import Describer
 
 
@@ -136,7 +136,7 @@ class DataSources(object):
             except Exception:
                 print("ERROR", cp)
                 continue
-        missing = list(set(dsl) -set(dsdes.keys()))
+        missing = list(set(dsl) - set(dsdes.keys()))
         # print(missing)
         for mds in missing:
             try:
@@ -160,7 +160,7 @@ class DataSources(object):
                         dd["nxtype"] = nxtype
                         dsdes[dd["dsname"]] = dd
                         # print(dd)
-            except Exception as e:
+            except Exception:
                 # print("ERROR", mds, e)
                 continue
         self.__description = dsdes
