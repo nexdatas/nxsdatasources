@@ -38,7 +38,8 @@ except Exception:
 
 class DataSources(object):
 
-    def __init__(self, server=None, nxsconfigserver=None, proxy=None):
+    def __init__(self, server=None, nxsconfigserver=None, proxy=None,
+                 dsblacklist=None):
         """ contructor
 
         :param server: NXSDSRecSelector server
@@ -63,6 +64,9 @@ class DataSources(object):
 
         #: (:class:`tango.DeviceProxy`) self device proxy
         self.__dp = proxy
+
+        #: (:obj:`list` <:obj:`str`> ) datasource blacklist
+        self.dsblacklist = dsblacklist or []
 
         #: (:class:`tango.DeviceProxy` \
         #: or :class:`nxsconfigserver.XMLConfigurator.XMLConfigurator`) \
@@ -136,7 +140,7 @@ class DataSources(object):
             except Exception:
                 print("ERROR", cp)
                 continue
-        missing = list(set(dsl) - set(dsdes.keys()))
+        missing = list(set(dsl) - set(dsdes.keys()) - set(self.dsblacklist))
         # print(missing)
         for mds in missing:
             try:
@@ -161,6 +165,7 @@ class DataSources(object):
                         dsdes[dd["dsname"]] = dd
                         # print(dd)
             except Exception:
+                # except Exception as e:
                 # print("ERROR", mds, e)
                 continue
         self.__description = dsdes

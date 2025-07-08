@@ -81,7 +81,8 @@ class NXSDataSources(tango.LatestDeviceImpl):
             self.__ds = None
         self.__dp = self.__dp or tango.DeviceProxy(self.get_name())
         self.get_device_properties(self.get_device_class())
-        self.__ds = DS(self, self.NXSConfigServer or None, self.__dp)
+        self.__ds = DS(self, self.NXSConfigServer or None, self.__dp,
+                       self.DSBlackList or [])
         self.set_state(tango.DevState.ON)
 
     def always_executed_hook(self):
@@ -401,6 +402,11 @@ class NXSDataSourcesClass(tango.DeviceClass):
             [tango.DevString,
              "Prefix for Database DataSources",
              ["ds_"],
+             ],
+        'DSBlackList':
+            [tango.DevVarStringArray,
+             "datasource black list",
+             [],
              ],
     }
 
