@@ -30,6 +30,19 @@ from nxsrecconfig.Utils import TangoUtils
 from nxsrecconfig.Describer import Describer
 
 
+from nxswriter.DataSourceFactory import DataSourceFactory
+from nxswriter.DataSourcePool import DataSourcePool
+# from nxswriter.Element import Element
+from nxswriter.EField import EField
+# from nxswriter import DataSources
+# from nxswriter import ClientSource
+# from nxswriter import PyEvalSource
+# from nxswriter import TangoSource
+# from nxswriter.Errors import DataSourceSetupError
+from nxswriter.DecoderPool import DecoderPool
+import xml.etree.ElementTree as et
+from lxml.etree import XMLParser
+
 try:
     import tango
 except Exception:
@@ -85,6 +98,7 @@ class DataSources(object):
                        "string": "NX_CHAR", "bool": "NX_BOOLEAN"}
 
         self.__description = None
+        self.__elements = {}
 
     def getConfigServer(self):
         if self.__configServer is not None:
@@ -99,8 +113,36 @@ class DataSources(object):
                 self.__configServer = dps[0]
                 return self.__configServer
 
-    def addDataSources(self, dss):
-        return
+    def addDataSources(self, dss=None):
+        if not self.__description:
+            self.refresh()
+        if not dss:
+            dss = list(
+                set(self.availableDataSources()) - set(self.dsblacklist))
+
+        dssxml = self.getConfigServer().dataSources(dss)
+        dxml = dict(zip(dss, dssxml))
+        for dsname, xml in dxml.items():
+            des = self.__description.get(
+                dsname,
+                {'shape': [], 'nxtype': 'NX_FLOAT64', 'dsname': dsname})
+            el = EField("field", {})
+            self.__elements[dsname] = el
+            if "dstype" in des:
+                ds = DataSourceFactory({"type": des["dstype"]}, el)
+                dsp = DataSourcePool()
+                dcp = DecoderPool()
+                ds.setDataSources(dsp)
+                ds.setDecoders(dcp)
+                dset = et.fromstring(xml, parser=XMLParser(collect_ids=False))
+                if dset.tag != "datasource":
+                    dset = dset.find("datasource")
+                    if not dset:
+                        continue
+                xml = et.tostring(dset, encoding='unicode', method='xml')
+                # xml should be instatiated 
+                ds.store([xml])
+                # print("NAME: ", dsname, type(el.source), xml)
 
     def removeDataSources(self, dss):
         return
@@ -140,7 +182,8 @@ class DataSources(object):
             except Exception:
                 print("ERROR", cp)
                 continue
-        missing = list(set(dsl) - set(dsdes.keys()) - set(self.dsblacklist))
+        missing = list(set(dsl) - set(dsdes.keys())
+                       - set(self.dsblacklist))
         # print(missing)
         for mds in missing:
             try:
