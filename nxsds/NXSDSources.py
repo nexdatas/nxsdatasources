@@ -52,6 +52,26 @@ from .DataSources import DataSources as DS
 class NXSDataSources(tango.LatestDeviceImpl):
     """Provides a collection of NeXus datasources as Tango attributes"""
 
+    pTt = {"long": tango.DevLong64,
+           "unicode": tango.DevString,
+           "bool": tango.DevBoolean,
+           "int": tango.DevLong64,
+           "int64": tango.DevLong64,
+           "int32": tango.DevLong,
+           "int16": tango.DevShort,
+           "int8": tango.DevUChar,
+           "uint": tango.DevULong64,
+           "uint64": tango.DevULong64,
+           "uint32": tango.DevULong,
+           "uint16": tango.DevUShort,
+           "uint8": tango.DevUChar,
+           "float": tango.DevDouble,
+           "float64": tango.DevDouble,
+           "float32": tango.DevFloat,
+           "float16": tango.DevFloat,
+           "string": tango.DevString,
+           "str": tango.DevString}
+
     def __init__(self, cl, name):
         """  Device constructor
 
@@ -368,6 +388,11 @@ class NXSDataSources(tango.LatestDeviceImpl):
         if self.get_state() in [tango.DevState.RUNNING]:
             return False
         return True
+
+    def read_DynamicAttr(self, attr):
+        name = attr.get_name()
+        dsname = name
+        attr.set_value(self.__ds.getValue(dsname))
 
 
 class NXSDataSourcesClass(tango.DeviceClass):
