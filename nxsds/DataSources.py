@@ -22,6 +22,7 @@
 
 import weakref
 import json
+import time
 
 # from .Release import __version__
 from .StreamSet import StreamSet
@@ -34,6 +35,8 @@ from nxswriter.DataSourceFactory import DataSourceFactory
 from nxswriter.DataSourcePool import DataSourcePool
 # from nxswriter.Element import Element
 from nxswriter.EField import EField
+from nxswriter.DataHolder import DataHolder
+from nxswriter.Types import NTP
 # from nxswriter import DataSources
 # from nxswriter import ClientSource
 # from nxswriter import PyEvalSource
@@ -99,9 +102,12 @@ class DataSources(object):
 
         self.__description = None
         self.__elements = {}
+        self.__dsfac = {}
+        self.__attr = {}
 
     def getConfigServer(self):
         if self.__configServer is not None:
+            self.__configServer.open()
             return self.__configServer
         if not self.nxsconfigserver:
             self.nxsconfigserver = TangoUtils.getDeviceName(
@@ -111,6 +117,7 @@ class DataSources(object):
                 [self.nxsconfigserver])
             if dps:
                 self.__configServer = dps[0]
+                self.__configServer.open()
                 return self.__configServer
 
     def addDataSources(self, dss=None):
@@ -120,29 +127,103 @@ class DataSources(object):
             dss = list(
                 set(self.availableDataSources()) - set(self.dsblacklist))
 
-        dssxml = self.getConfigServer().dataSources(dss)
+        dssxml = self.getConfigServer().instantiatedDataSources(dss)
         dxml = dict(zip(dss, dssxml))
         for dsname, xml in dxml.items():
-            des = self.__description.get(
-                dsname,
-                {'shape': [], 'nxtype': 'NX_FLOAT64', 'dsname': dsname})
-            el = EField("field", {})
-            self.__elements[dsname] = el
-            if "dstype" in des:
-                ds = DataSourceFactory({"type": des["dstype"]}, el)
-                dsp = DataSourcePool()
-                dcp = DecoderPool()
-                ds.setDataSources(dsp)
-                ds.setDecoders(dcp)
-                dset = et.fromstring(xml, parser=XMLParser(collect_ids=False))
-                if dset.tag != "datasource":
-                    dset = dset.find("datasource")
-                    if not dset:
-                        continue
+            ds = self.storeDataSource(dsname, xml)
+            if ds:
+                try:
+                    self.addAttribute(dsname)
+                    # self.getValue(dsname)
+                except Exception as e:
+                    print("ERROR", str(e), dsname)
+
+    def storeDataSource(self, dsname, xml):
+        des = self.__description.get(
+            dsname,
+            {'shape': [], 'dsname': dsname})
+        if dsname not in self.__description:
+            self.__description[dsname] = des
+        el = EField("field", {})
+        self.__elements[dsname] = el
+        if "dstype" in des:
+            ds = DataSourceFactory({"type": des["dstype"]}, el)
+            dsp = DataSourcePool()
+            dcp = DecoderPool()
+            ds.setDataSources(dsp)
+            ds.setDecoders(dcp)
+            dset = et.fromstring(xml, parser=XMLParser(collect_ids=False))
+            # print("XML", xml)
+            if dset.tag != "datasource":
+                dset = dset.find("datasource")
+                if len(dset) == 0:
+                    return
                 xml = et.tostring(dset, encoding='unicode', method='xml')
-                # xml should be instatiated 
-                ds.store([xml])
-                # print("NAME: ", dsname, type(el.source), xml)
+            # xml should be instatiated
+            ds.store([xml])
+            self.__dsfac[dsname] = ds
+            if "nxtype" not in des:
+                try:
+                    v = self.getValue(dsname)
+                    print("TYPE", type(v))
+                except Exception:
+                    pass
+
+            return dsname
+
+    def addAttribute(self, dsname):
+        # el = self.__elements[dsname]
+        des = self.__description[dsname]
+        # print(des)
+        myAttr = None
+        if "nxtype" not in des:
+            des["nxtype"] = "NX_FLOAT64"
+        nptype = NTP.nTnp.get(des["nxtype"], des["nxtype"])
+        tntype = self.__server.pTt.get(nptype, nptype)
+        if des["shape"] is None:
+            # tango.DevDouble
+            myAttr = tango.Attr(dsname, tntype, tango.READ)
+        elif len(des["shape"]) == 1:
+            myAttr = tango.SpectrumAttr(dsname, tntype,
+                                        tango.READ, 4096)
+        elif len(des["shape"]) == 2:
+            myAttr = tango.SpectrumAttr(dsname, tntype,
+                                        tango.READ, 4096, 4096)
+            self.__attr[dsname] = myAttr
+        if myAttr is not None:
+            try:
+                self.__server.remove_attribute(dsname)
+            except Exception:
+                pass
+            self.__server.add_attribute(
+                myAttr, self.__server.read_DynamicAttr,
+                None, None)
+
+    def readDynamicAttr(self, attr):
+        name = attr.get_name()
+        dsname = name
+        attr.set_value(self.getValue(dsname))
+
+    def getValue(self, dsname):
+
+        t2 = time.time()
+        # print("NAME: ", dsname, type(el.source), xml)
+        el = self.__elements[dsname]
+        des = self.__description[dsname]
+        try:
+            vv = el.source.getData()
+            t3 = time.time()
+            if vv is not None:
+                dh = DataHolder(**vv)
+                vl = dh.cast(NTP.nTnp.get(
+                    des["nxtype"], des["nxtype"]))
+                t4 = time.time()
+                print("VALUE: ", dsname, vl, t3 - t2, t4 - t3)
+                return vl
+        except Exception as e:
+            print("XML", des)
+            print("VAL", vv)
+            print(str(e))
 
     def removeDataSources(self, dss):
         return
@@ -195,7 +276,7 @@ class DataSources(object):
                         dstype = dd.get("dstype")
                         shape = None
                         dt = "float"
-                        nxtype = "NXFLOAT"
+                        nxtype = "NX_FLOAT64"
                         if dstype == 'TANGO':
                             source = dd["record"]
                             shape, dt, _ = TangoUtils.getShapeTypeUnit(source)
