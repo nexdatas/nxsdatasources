@@ -412,7 +412,7 @@ class NXSDataSourcesClass(tango.DeviceClass):
         'DSPrefix':
             [tango.DevString,
              "Prefix for Tango DataSources",
-             ["ds_"],
+             [""],
              ],
         'DSBlackList':
             [tango.DevVarStringArray,

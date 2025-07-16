@@ -56,7 +56,7 @@ except Exception:
 class DataSources(object):
 
     def __init__(self, server=None, nxsconfigserver=None, proxy=None,
-                 dsblacklist=None, dsprefix="ds_"):
+                 dsblacklist=None, dsprefix=""):
         """ contructor
 
         :param server: NXSDSRecSelector server
@@ -83,7 +83,6 @@ class DataSources(object):
 
         #: (:class:`tango.DeviceProxy`) self device proxy
         self.__dp = proxy
-
         #: (:obj:`list` <:obj:`str`> ) datasource blacklist
         self.dsblacklist = dsblacklist or []
 
@@ -193,19 +192,20 @@ class DataSources(object):
             des["nxtype"] = "NX_FLOAT64"
         nptype = NTP.nTnp.get(des["nxtype"], des["nxtype"])
         tntype = self.__server.pTt.get(nptype, nptype)
+        atname = self.dsprefix + dsname
         if des["shape"] is None or len(des["shape"]) == 0:
             # tango.DevDouble
-            myAttr = tango.Attr(dsname, tntype, tango.READ)
+            myAttr = tango.Attr(atname, tntype, tango.READ)
         elif len(des["shape"]) == 1:
-            myAttr = tango.SpectrumAttr(dsname, tntype,
+            myAttr = tango.SpectrumAttr(atname, tntype,
                                         tango.READ, 4096)
         elif len(des["shape"]) == 2:
-            myAttr = tango.ImageAttr(dsname, tntype,
+            myAttr = tango.ImageAttr(atname, tntype,
                                      tango.READ, 4096, 4096)
-            self.__attr[dsname] = myAttr
         if myAttr is not None:
+            self.__attr[atname] = myAttr
             try:
-                self.__server.remove_attribute(dsname)
+                self.__server.remove_attribute(atname)
             except Exception:
                 pass
             self.__server.add_attribute(
@@ -244,12 +244,14 @@ class DataSources(object):
         if not dss:
             dss = list(set(self.__dp.get_attribute_list())
                        - set(self.dsinterlist))
-        #  print("REMOVE", dss)
-        for dsname in dss:
+            #  print("REMOVE", dss)
+        else:
+            dss = [self.dsprefix + ds for ds in dss]
+        for atname in dss:
             try:
-                self.__server.remove_attribute(dsname)
-                if dsname in self.__attr:
-                    self.__attr.pop(dsname)
+                self.__server.remove_attribute(atname)
+                if atname in self.__attr:
+                    self.__attr.pop(atname)
 
             except Exception:
                 pass

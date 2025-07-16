@@ -12,7 +12,6 @@
     <deviceProperties name="DSPrefix" description="Prefix for DataSources">
       <type xsi:type="pogoDsl:StringType"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <DefaultPropValue>ds_</DefaultPropValue>
     </deviceProperties>
     <deviceProperties name="DSBlackList" description="datasource black list">
       <type xsi:type="pogoDsl:StringVectorType"/>
