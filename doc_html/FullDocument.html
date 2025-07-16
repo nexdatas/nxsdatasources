@@ -23,7 +23,7 @@
 				<li> <a href="FullDocument.html#cmdSetCommonBlock"> SetCommonBlock </a>
 				<li> <a href="FullDocument.html#cmdVariables"> Variables </a>
 				<li> <a href="FullDocument.html#cmdCommonBlock"> CommonBlock </a>
-				<li> <a href="FullDocument.html#cmdDescription"> Description </a>
+				<li> <a href="FullDocument.html#cmdDetails"> Details </a>
 				<li> <a href="FullDocument.html#cmdRefresh"> Refresh </a>
 				<li> <a href="FullDocument.html#cmdUserData"> UserData </a>
 				<li> <a href="FullDocument.html#cmdSetUserData"> SetUserData </a>
@@ -113,26 +113,8 @@
 		<td> none </td>
 	</tr>
 	<tr>
-		<td> TangoDSPrefix </td>
-		<td> Prefix for Tango DataSources </td>
-		<td> String </td>
-		<td> ds_ <br> </td>
-	</tr>
-	<tr>
-		<td> PyEvalDSPrefix </td>
-		<td> Prefix for PyEval DataSources </td>
-		<td> String </td>
-		<td> ds_ <br> </td>
-	</tr>
-	<tr>
-		<td> ClientDSPrefix </td>
-		<td> Prefix for Cient DataSources </td>
-		<td> String </td>
-		<td> ds_ <br> </td>
-	</tr>
-	<tr>
-		<td> DbDSPrefix </td>
-		<td> Prefix for Database DataSources </td>
+		<td> DSPrefix </td>
+		<td> Prefix for DataSources </td>
 		<td> String </td>
 		<td> ds_ <br> </td>
 	</tr>
@@ -221,11 +203,11 @@
 		<td> Provides  JSON string with the CommonBlock dictionary </td>
 	</tr>
 	<tr>
-		<td> <a href="CmdDescription.html"> Description </a> </td>
+		<td> <a href="CmdDetails.html"> Details </a> </td>
 		<td> DEV_VOID </td>
 		<td> DEV_STRING </td>
 		<td> OPERATOR </td>
-		<td> provides datasource description list </td>
+		<td> provides detail datasource description list </td>
 	</tr>
 	<tr>
 		<td> <a href="CmdRefresh.html"> Refresh </a> </td>
@@ -691,16 +673,16 @@
 	</tr>
 </table>
 <br><br><hr>
-<a name="cmdDescription"> </a>
+<a name="cmdDetails"> </a>
 <br><br><br>
-<font size="+1"><u><b> Command Description : </b></u></font>
+<font size="+1"><u><b> Command Details : </b></u></font>
 <ul>
-	provides datasource description list
+	provides detail datasource description list
 </ul>
 <br><br><br>
 <Table Border=2 Cellpadding=3 CELLSPACING=0>
 	<tr bgcolor="#CCCCFF" class="TableHeadingColor">
-	<td colspan=0> <font size=+1> <center><b> Description Definition </b></font></center></td>
+	<td colspan=0> <font size=+1> <center><b> Details Definition </b></font></center></td>
 	</tr>
 	<tr>
 		<td> Input Argument </td>
@@ -710,7 +692,7 @@
 	<tr>
 		<td> Output Argument </td>
 		<td> Tango::DEV_STRING </td>
-		<td> datasource descirption </td>
+		<td> datasource descirption details </td>
 	</tr>
 	<tr>
 		<td> DisplayLevel </td>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ASCII"?>
 <pogoDsl:PogoSystem xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:pogoDsl="http://tango.org/pogo/PogoDsl">
-  <classes name="NXSDataSources" pogoRevision="9.8">
-    <description description="Provides a collection of NeXus datasources as Tango attributes" title="Collection of NeXus DataSources" sourcePath="/home/jkotan/ndts/nxsdatasources" language="Python" filestogenerate="XMI   file,Code files,Protected Regions,html Pages" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="true" hasAbstractCommand="false" hasAbstractAttribute="false" descriptionHtmlExists="false">
+  <classes name="NXSDataSources" pogoRevision="9.9">
+    <description description="Provides a collection of NeXus datasources as Tango attributes" title="Collection of NeXus DataSources" sourcePath="/home/jkotan/ndts/nexdatas.datasources" language="Python" filestogenerate="XMI   file,Code files,Protected Regions,html Pages" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="true" hasAbstractCommand="false" hasAbstractAttribute="false" descriptionHtmlExists="false">
       <inheritances classname="Device_Impl" sourcePath=""/>
       <identification contact="at gmail.com - jankotan" author="jankotan" emailDomain="gmail.com" classFamily="Acquisition" siteSpecific="" platform="All Platforms" bus="Not Applicable" manufacturer="" reference=""/>
     </description>
@@ -9,22 +9,7 @@
       <type xsi:type="pogoDsl:StringType"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
     </deviceProperties>
-    <deviceProperties name="TangoDSPrefix" description="Prefix for Tango DataSources">
-      <type xsi:type="pogoDsl:StringType"/>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <DefaultPropValue>ds_</DefaultPropValue>
-    </deviceProperties>
-    <deviceProperties name="PyEvalDSPrefix" description="Prefix for PyEval DataSources">
-      <type xsi:type="pogoDsl:StringType"/>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <DefaultPropValue>ds_</DefaultPropValue>
-    </deviceProperties>
-    <deviceProperties name="ClientDSPrefix" description="Prefix for Cient DataSources">
-      <type xsi:type="pogoDsl:StringType"/>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <DefaultPropValue>ds_</DefaultPropValue>
-    </deviceProperties>
-    <deviceProperties name="DbDSPrefix" description="Prefix for Database DataSources">
+    <deviceProperties name="DSPrefix" description="Prefix for DataSources">
       <type xsi:type="pogoDsl:StringType"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
       <DefaultPropValue>ds_</DefaultPropValue>
@@ -114,11 +99,11 @@
       </argout>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
     </commands>
-    <commands name="Description" description="provides datasource description list" execMethod="description" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+    <commands name="Details" description="provides detail datasource description list" execMethod="details" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
       <argin description="">
         <type xsi:type="pogoDsl:VoidType"/>
       </argin>
-      <argout description="datasource descirption">
+      <argout description="datasource descirption details">
         <type xsi:type="pogoDsl:StringType"/>
       </argout>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
