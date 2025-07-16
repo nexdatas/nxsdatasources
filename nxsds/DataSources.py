@@ -22,7 +22,8 @@
 
 import weakref
 import json
-import time
+# import time
+import fnmatch
 
 # from .Release import __version__
 from .StreamSet import StreamSet
@@ -55,7 +56,7 @@ except Exception:
 class DataSources(object):
 
     def __init__(self, server=None, nxsconfigserver=None, proxy=None,
-                 dsblacklist=None):
+                 dsblacklist=None, dsprefix=""):
         """ contructor
 
         :param server: NXSDSRecSelector server
@@ -65,7 +66,6 @@ class DataSources(object):
         :param proxy: self device proxy
         :type proxy: :class:`tango.DeviceProxy`
         """
-
         #: (:class:`tango.Database`) tango database
         self.__db = tango.Database()
 
@@ -78,11 +78,16 @@ class DataSources(object):
         #: (:obj:`str`) nexus config server device name
         self.nxsconfigserver = nxsconfigserver
 
+        #: (:obj:`str`) datasource prefix
+        self.dsprefix = dsprefix
+
         #: (:class:`tango.DeviceProxy`) self device proxy
         self.__dp = proxy
-
         #: (:obj:`list` <:obj:`str`> ) datasource blacklist
         self.dsblacklist = dsblacklist or []
+
+        #: (:obj:`list` <:obj:`str`> ) datasource blacklist
+        self.dsinterlist = ["Status", "State"]
 
         #: (:class:`tango.DeviceProxy` \
         #: or :class:`nxsconfigserver.XMLConfigurator.XMLConfigurator`) \
@@ -124,19 +129,26 @@ class DataSources(object):
         if not self.__description:
             self.refresh()
         if not dss:
-            dss = list(
-                set(self.availableDataSources()) - set(self.dsblacklist))
+            blist = []
+            dss = self.availableDataSources()
+            for flt in self.dsblacklist:
+                blist.extend(fnmatch.filter(dss, flt))
 
-        dssxml = self.getConfigServer().instantiatedDataSources(dss)
-        dxml = dict(zip(dss, dssxml))
-        for dsname, xml in dxml.items():
-            ds = self.storeDataSource(dsname, xml)
-            if ds:
+            dss = list(set(dss) - set(blist))
+        # print("ADD", dss)
+        # print("BL", blist)
+        for dsname in dss:
+            dssxml = self.getConfigServer().instantiatedDataSources([dsname])
+            if dssxml:
+                xml = dssxml[0]
                 try:
-                    self.addAttribute(dsname)
+                    ds = self.storeDataSource(dsname, xml)
+                    if ds:
+                        self.addAttribute(dsname)
                     # self.getValue(dsname)
                 except Exception as e:
-                    print("ERROR", str(e), dsname)
+                    print("ERROR1", str(e), dsname)
+                    continue
 
     def storeDataSource(self, dsname, xml):
         des = self.__description.get(
@@ -164,8 +176,8 @@ class DataSources(object):
             self.__dsfac[dsname] = ds
             if "nxtype" not in des:
                 try:
-                    v = self.getValue(dsname)
-                    print("TYPE", type(v))
+                    _ = self.getValue(dsname)
+                    # print("TYPE", type(v))
                 except Exception:
                     pass
 
@@ -180,19 +192,20 @@ class DataSources(object):
             des["nxtype"] = "NX_FLOAT64"
         nptype = NTP.nTnp.get(des["nxtype"], des["nxtype"])
         tntype = self.__server.pTt.get(nptype, nptype)
-        if des["shape"] is None:
+        atname = self.dsprefix + dsname
+        if des["shape"] is None or len(des["shape"]) == 0:
             # tango.DevDouble
-            myAttr = tango.Attr(dsname, tntype, tango.READ)
+            myAttr = tango.Attr(atname, tntype, tango.READ)
         elif len(des["shape"]) == 1:
-            myAttr = tango.SpectrumAttr(dsname, tntype,
+            myAttr = tango.SpectrumAttr(atname, tntype,
                                         tango.READ, 4096)
         elif len(des["shape"]) == 2:
-            myAttr = tango.SpectrumAttr(dsname, tntype,
-                                        tango.READ, 4096, 4096)
-            self.__attr[dsname] = myAttr
+            myAttr = tango.ImageAttr(atname, tntype,
+                                     tango.READ, 4096, 4096)
         if myAttr is not None:
+            self.__attr[atname] = myAttr
             try:
-                self.__server.remove_attribute(dsname)
+                self.__server.remove_attribute(atname)
             except Exception:
                 pass
             self.__server.add_attribute(
@@ -206,26 +219,43 @@ class DataSources(object):
 
     def getValue(self, dsname):
 
-        t2 = time.time()
+        # t2 = time.time()
         # print("NAME: ", dsname, type(el.source), xml)
         el = self.__elements[dsname]
         des = self.__description[dsname]
         try:
             vv = el.source.getData()
-            t3 = time.time()
+            # t3 = time.time()
             if vv is not None:
                 dh = DataHolder(**vv)
                 vl = dh.cast(NTP.nTnp.get(
                     des["nxtype"], des["nxtype"]))
-                t4 = time.time()
-                print("VALUE: ", dsname, vl, t3 - t2, t4 - t3)
+                # t4 = time.time()
+                # print("VALUE: ", dsname, vl, t3 - t2, t4 - t3)
                 return vl
-        except Exception as e:
-            print("XML", des)
-            print("VAL", vv)
-            print(str(e))
+        except Exception:
+            pass
+        # except Exception as e:
+        #     print("XML", des)
+        #     print("VAL", vv)
+        #     print(str(e))
 
     def removeDataSources(self, dss):
+        if not dss:
+            dss = list(set(self.__dp.get_attribute_list())
+                       - set(self.dsinterlist))
+            #  print("REMOVE", dss)
+        else:
+            dss = [self.dsprefix + ds for ds in dss]
+        for atname in dss:
+            try:
+                self.__server.remove_attribute(atname)
+                if atname in self.__attr:
+                    self.__attr.pop(atname)
+
+            except Exception:
+                pass
+
         return
 
     def availableDataSources(self):
@@ -243,7 +273,7 @@ class DataSources(object):
     def commonBlock(self):
         return ""
 
-    def description(self):
+    def details(self):
         if not self.__description:
             self.refresh()
         return json.dumps(self.__description)
@@ -261,7 +291,7 @@ class DataSources(object):
                     dsdes[dd["dsname"]] = dd
                     #  print(dd)
             except Exception:
-                print("ERROR", cp)
+                # print("ERROR2", cp)
                 continue
         missing = list(set(dsl) - set(dsdes.keys())
                        - set(self.dsblacklist))
@@ -290,8 +320,9 @@ class DataSources(object):
                         # print(dd)
             except Exception:
                 # except Exception as e:
-                # print("ERROR", mds, e)
+                #     print("ERROR3", mds, e)
                 continue
+        # print(dsdes)
         self.__description = dsdes
 
     def userData(self):

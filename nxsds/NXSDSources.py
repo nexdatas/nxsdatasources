@@ -102,7 +102,7 @@ class NXSDataSources(tango.LatestDeviceImpl):
         self.__dp = self.__dp or tango.DeviceProxy(self.get_name())
         self.get_device_properties(self.get_device_class())
         self.__ds = DS(self, self.NXSConfigServer or None, self.__dp,
-                       self.DSBlackList or [])
+                       self.DSBlackList or [], self.DSPrefix or "")
         self.set_state(tango.DevState.ON)
 
     def always_executed_hook(self):
@@ -293,23 +293,24 @@ class NXSDataSources(tango.LatestDeviceImpl):
             return False
         return True
 
-    def Description(self):
-        """ provides datasource description list
+    def Details(self):
+        """ provides datasource details list
         :return: datasource descirption
         :rtype: tango.DevString
         """
-        self.debug_stream("In Description()")
+        self.debug_stream("In Details()")
         try:
             self.set_state(tango.DevState.RUNNING)
-            argout = self.__ds.description()
+            argout = self.__ds.details()
+            print("arg", argout)
             self.set_state(tango.DevState.ON)
         finally:
             if self.get_state() == tango.DevState.RUNNING:
                 self.set_state(tango.DevState.ON)
         return argout
 
-    def is_Description_allowed(self):
-        """ Description command State Machine
+    def is_Details_allowed(self):
+        """ Details command State Machine
 
         :returns: True if the operation allowed
         :rtype: :obj:`bool`
@@ -319,7 +320,7 @@ class NXSDataSources(tango.LatestDeviceImpl):
         return True
 
     def Refresh(self):
-        """ Refresh datasource description
+        """ Refresh datasource details
         """
         self.debug_stream("In Refresh()")
         try:
@@ -408,25 +409,10 @@ class NXSDataSourcesClass(tango.DeviceClass):
              "NeXus configuration server",
              [],
              ],
-        'TangoDSPrefix':
+        'DSPrefix':
             [tango.DevString,
              "Prefix for Tango DataSources",
-             ["ds_"],
-             ],
-        'PyEvalDSPrefix':
-            [tango.DevString,
-             "Prefix for PyEval DataSources",
-             ["ds_"],
-             ],
-        'ClientDSPrefix':
-            [tango.DevString,
-             "Prefix for Cient DataSources",
-             ["ds_"],
-             ],
-        'DbDSPrefix':
-            [tango.DevString,
-             "Prefix for Database DataSources",
-             ["ds_"],
+             [""],
              ],
         'DSBlackList':
             [tango.DevVarStringArray,
@@ -459,9 +445,9 @@ class NXSDataSourcesClass(tango.DeviceClass):
         'CommonBlock':
             [[tango.DevVoid, "none"],
              [tango.DevString, "JSON string with the CommonBlock dictionary"]],
-        'Description':
+        'Details':
             [[tango.DevVoid, "none"],
-             [tango.DevString, "datasource descirption"]],
+             [tango.DevString, "datasource descirption details"]],
         'Refresh':
             [[tango.DevVoid, "none"],
              [tango.DevVoid, "none"]],
