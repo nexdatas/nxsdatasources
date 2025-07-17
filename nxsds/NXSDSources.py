@@ -103,6 +103,7 @@ class NXSDataSources(tango.LatestDeviceImpl):
         self.get_device_properties(self.get_device_class())
         self.__ds = DS(self, self.NXSConfigServer or None, self.__dp,
                        self.DSBlackList or [], self.DSPrefix or "")
+        self.__ds.addDataSources([])
         self.set_state(tango.DevState.ON)
 
     def always_executed_hook(self):
