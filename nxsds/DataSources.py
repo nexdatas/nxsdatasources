@@ -22,7 +22,7 @@
 
 import weakref
 import json
-# import time
+import time
 import fnmatch
 
 # from .Release import __version__
@@ -105,7 +105,8 @@ class DataSources(object):
                        "str": "NX_CHAR",
                        "string": "NX_CHAR", "bool": "NX_BOOLEAN"}
 
-        self.__description = None
+        self.__description = {}
+        self.__olddescription = {}
         self.__elements = {}
         self.__dsfac = {}
         self.__attr = {}
@@ -126,6 +127,7 @@ class DataSources(object):
                 return self.__configServer
 
     def addDataSources(self, dss=None):
+        ta = time.time()
         if not self.__description:
             self.refresh()
         if not dss:
@@ -137,18 +139,25 @@ class DataSources(object):
             dss = list(set(dss) - set(blist))
         # print("ADD", dss)
         # print("BL", blist)
+        tb = time.time()
         for dsname in dss:
+            # t1 = time.time()
             dssxml = self.getConfigServer().instantiatedDataSources([dsname])
             if dssxml:
                 xml = dssxml[0]
                 try:
+                    # t2 = time.time()
                     ds = self.storeDataSource(dsname, xml)
+                    # t3 = time.time()
                     if ds:
                         self.addAttribute(dsname)
                     # self.getValue(dsname)
+                    # t4 = time.time()
+                    #  print("DS", dsname,t2-t1,t3-t2, t4-t3)
                 except Exception as e:
                     print("ERROR1", str(e), dsname)
                     continue
+        print("TIME:", tb - ta, time.time() - tb)
 
     def storeDataSource(self, dsname, xml):
         des = self.__description.get(
@@ -176,8 +185,9 @@ class DataSources(object):
             self.__dsfac[dsname] = ds
             if "nxtype" not in des:
                 try:
-                    _ = self.getValue(dsname)
-                    # print("TYPE", type(v))
+                    print("CHE")
+                    v = self.getValue(dsname)
+                    print("TYPE", type(v))
                 except Exception:
                     pass
 
@@ -185,14 +195,25 @@ class DataSources(object):
 
     def addAttribute(self, dsname):
         # el = self.__elements[dsname]
+
         des = self.__description[dsname]
+        odes = {}
+        if dsname in self.__olddescription:
+            odes = self.__olddescription[dsname]
         # print(des)
+        # print(odes)
         myAttr = None
         if "nxtype" not in des:
             des["nxtype"] = "NX_FLOAT64"
+        if "nxtype" not in odes:
+            odes["nxtype"] = "NX_FLOAT64"
+        atname = self.dsprefix + dsname
+        if odes and atname in self.__attr and \
+                odes["nxtype"] == des["nxtype"] and \
+                des.get("shape", None) == odes.get("shape", None):
+            return
         nptype = NTP.nTnp.get(des["nxtype"], des["nxtype"])
         tntype = self.__server.pTt.get(nptype, nptype)
-        atname = self.dsprefix + dsname
         if des["shape"] is None or len(des["shape"]) == 0:
             # tango.DevDouble
             myAttr = tango.Attr(atname, tntype, tango.READ)
@@ -211,6 +232,7 @@ class DataSources(object):
             self.__server.add_attribute(
                 myAttr, self.__server.read_DynamicAttr,
                 None, None)
+            self.__olddescription[dsname] = des
 
     def readDynamicAttr(self, attr):
         name = attr.get_name()
@@ -242,8 +264,22 @@ class DataSources(object):
 
     def removeDataSources(self, dss):
         if not dss:
-            dss = list(set(self.__dp.get_attribute_list())
-                       - set(self.dsinterlist))
+            # throws error
+            # try:
+            #     atl = self.__dp.get_attribute_list()
+            # except Exception as e:
+            #     print(str(e))
+            #     atl = self.__dp.get_attribute_list()
+
+            # does not work
+            # print([at for at in
+            #    self.__server.get_device_attr().get_attribute_list()])
+
+            atts = self.__server.get_device_attr().get_attribute_list()
+            atl = [atts[i].get_name() for i in range(len(atts))]
+
+            # print(atl)
+            dss = list(set(atl) - set(self.dsinterlist))
             #  print("REMOVE", dss)
         else:
             dss = [self.dsprefix + ds for ds in dss]
@@ -323,6 +359,7 @@ class DataSources(object):
                 #     print("ERROR3", mds, e)
                 continue
         # print(dsdes)
+        self.__olddescription = self.__description
         self.__description = dsdes
 
     def userData(self):
