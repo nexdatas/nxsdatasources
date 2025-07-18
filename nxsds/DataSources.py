@@ -124,6 +124,7 @@ class DataSources(object):
             if dps:
                 self.__configServer = dps[0]
                 self.__configServer.open()
+                self.__configServer.set_timeout_millis(10000)
                 return self.__configServer
 
     def addDataSources(self, dss=None):
@@ -139,10 +140,28 @@ class DataSources(object):
             dss = list(set(dss) - set(blist))
         # print("ADD", dss)
         # print("BL", blist)
+        # t1 = time.time()
+        # print("TO", tb-t1)
+        pyds = [dsname for dsname in dss if (
+            self.__description.get(dsname, {}).get("dstype") == "PYEVAL")]
+        adss = list(set(dss)-set(pyds))
+        xmls = self.getConfigServer().dataSources(adss)
+        dsxmls = dict(zip(adss, xmls))
         tb = time.time()
+        # print("PYEV", pyds)
+        try:
+            pxmls = self.getConfigServer().instantiatedDataSources(pyds)
+        except Exception:
+            pxmls = [self.getConfigServer().instantiatedDataSources(pyds)[0]
+                     for dsname in pyds]
+
+        pdsxmls = dict(zip(pyds, pxmls))
         for dsname in dss:
             # t1 = time.time()
-            dssxml = self.getConfigServer().instantiatedDataSources([dsname])
+            if dsname in pdsxmls:
+                dssxml = [pdsxmls[dsname]]
+            else:
+                dssxml = [dsxmls[dsname]]
             if dssxml:
                 xml = dssxml[0]
                 try:
@@ -153,7 +172,7 @@ class DataSources(object):
                         self.addAttribute(dsname)
                     # self.getValue(dsname)
                     # t4 = time.time()
-                    #  print("DS", dsname,t2-t1,t3-t2, t4-t3)
+                    # print("DS", dsname,t2-t1,t3-t2, t4-t3)
                 except Exception as e:
                     print("ERROR1", str(e), dsname)
                     continue
