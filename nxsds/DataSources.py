@@ -131,6 +131,9 @@ class DataSources(object):
         self.__dsfac = {}
         self.__attr = {}
 
+        self.__variables = "{}"
+        self.__variables_bk = "{}"
+
         self.__userRecord = {"data": {}}
 
     def getConfigServer(self):
@@ -185,11 +188,15 @@ class DataSources(object):
         dsxmls = dict(zip(adss, xmls))
         tb = time.time()
         # print("PYEV", pyds)
+
+        self.__variables_bk = self.getConfigServer().variables
+        self.getConfigServer().variables = self.__variables
         try:
             pxmls = self.getConfigServer().instantiatedDataSources(pyds)
         except Exception:
             pxmls = [self.getConfigServer().instantiatedDataSources(pyds)[0]
                      for dsname in pyds]
+        self.getConfigServer().variables = self.__variables_bk
 
         pdsxmls = dict(zip(pyds, pxmls))
         for dsname in dss:
@@ -355,10 +362,10 @@ class DataSources(object):
         return self.getConfigServer().availableDataSources()
 
     def setVariables(self, var):
-        return
+        self.__variables = var
 
     def variables(self):
-        return ""
+        return self.__variables
 
     def setCommonBlock(self, cblock):
         return
