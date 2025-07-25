@@ -27,6 +27,7 @@
 				<li> <a href="FullDocument.html#cmdRefresh"> Refresh </a>
 				<li> <a href="FullDocument.html#cmdUserData"> UserData </a>
 				<li> <a href="FullDocument.html#cmdSetUserData"> SetUserData </a>
+				<li> <a href="FullDocument.html#cmdRefreshUserData"> RefreshUserData </a>
 			</ul>
 			<li> <a href="FullDocument.html#attributes">   Attributes   </a>
 			<ul>
@@ -116,12 +117,24 @@
 		<td> DSPrefix </td>
 		<td> Prefix for DataSources </td>
 		<td> String </td>
-		<td> none <br> </td>
+		<td> none </td>
 	</tr>
 	<tr>
 		<td> DSBlackList </td>
 		<td> datasource black list </td>
 		<td> String[] </td>
+		<td> none </td>
+	</tr>
+	<tr>
+		<td> MetadataScript </td>
+		<td> user data metadata python script file name </td>
+		<td> String </td>
+		<td> none </td>
+	</tr>
+	<tr>
+		<td> NXSRecSelector </td>
+		<td> NXSRecSelector tango server </td>
+		<td> String </td>
 		<td> none </td>
 	</tr>
 </table>
@@ -229,6 +242,13 @@
 		<td> DEV_VOID </td>
 		<td> OPERATOR </td>
 		<td> set UserData from the given JSON string </td>
+	</tr>
+	<tr>
+		<td> <a href="CmdRefreshUserData.html"> RefreshUserData </a> </td>
+		<td> DEV_VOID </td>
+		<td> DEV_VOID </td>
+		<td> OPERATOR </td>
+		<td> refresh user data from MetadataScript and NXSRecSelector.UserData </td>
 	</tr>
 </table>
 <br><br><hr>
@@ -835,6 +855,55 @@
 		<td> Input Argument </td>
 		<td> Tango::DEV_STRING </td>
 		<td> JSON string with UserData </td>
+	</tr>
+	<tr>
+		<td> Output Argument </td>
+		<td> Tango::DEV_VOID </td>
+		<td>  </td>
+	</tr>
+	<tr>
+		<td> DisplayLevel </td>
+		<td> OPERATOR </td>
+		<td> .. </td>
+	</tr>
+	<tr>
+		<td> Inherited </td>
+		<td> false </td>
+		<td> .. </td>
+	</tr>
+	<tr>
+		<td> Abstract </td>
+		<td> false </td>
+		<td> .. </td>
+	</tr>
+	<tr>
+		<td> Polling Period </td>
+		<td> Not polled </td>
+		<td> .. </td>
+	</tr>
+<Tr BGCOLOR="#CCCCFF"><Td><Hr></Td><Td><Hr></Td><Td><Hr></Td></Tr>
+	<tr>
+		<td> Command allowed for </td>
+		<td> All states </td>
+		<td> .. </td>
+	</tr>
+</table>
+<br><br><hr>
+<a name="cmdRefreshUserData"> </a>
+<br><br><br>
+<font size="+1"><u><b> Command RefreshUserData : </b></u></font>
+<ul>
+	refresh user data from MetadataScript and NXSRecSelector.UserData
+</ul>
+<br><br><br>
+<Table Border=2 Cellpadding=3 CELLSPACING=0>
+	<tr bgcolor="#CCCCFF" class="TableHeadingColor">
+	<td colspan=0> <font size=+1> <center><b> RefreshUserData Definition </b></font></center></td>
+	</tr>
+	<tr>
+		<td> Input Argument </td>
+		<td> Tango::DEV_VOID </td>
+		<td>  </td>
 	</tr>
 	<tr>
 		<td> Output Argument </td>

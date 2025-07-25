@@ -20,6 +20,7 @@
 """  NeXus DataSources Collection - Tango Server """
 
 
+import os
 import weakref
 import json
 import time
@@ -28,7 +29,7 @@ import fnmatch
 # from .Release import __version__
 from .StreamSet import StreamSet
 
-from nxsrecconfig.Utils import TangoUtils
+from nxsrecconfig.Utils import TangoUtils, MSUtils
 from nxsrecconfig.Describer import Describer
 
 
@@ -56,7 +57,8 @@ except Exception:
 class DataSources(object):
 
     def __init__(self, server=None, nxsconfigserver=None, proxy=None,
-                 dsblacklist=None, dsprefix=""):
+                 dsblacklist=None, dsprefix="", nxsrecselector=None,
+                 metadatascript=""):
         """ contructor
 
         :param server: NXSDSRecSelector server
@@ -65,11 +67,19 @@ class DataSources(object):
         :type nxsconfigserver: :obj:`str`
         :param proxy: self device proxy
         :type proxy: :class:`tango.DeviceProxy`
+        :param dsblacklist: datasource blacklist
+        :type dsblacklist: :obj:`list`<:obj:`str`>
+        :param dsprefix: datasource prefix
+        :type dsprefix: :obj:`str`
+        :param nxsrecselector: nexus recorder selector server device name
+        :type nxsrecselector: :obj:`str`
+        :param metadatascript: metadata python script file name
+        :type metadatascript: :obj:`str`
         """
         #: (:class:`tango.Database`) tango database
         self.__db = tango.Database()
 
-        #: (:class:`nxsrecconfig.NXSConfig.NXSRecSelector`) Tango server
+        #: (:class:`nxsds.NXSDSources.NXSDatasSources`) Tango server
         self.__server = server
 
         #: (:class:`StreamSet` or :class:`tango.LatestDeviceImpl`) stream set
@@ -78,8 +88,14 @@ class DataSources(object):
         #: (:obj:`str`) nexus config server device name
         self.nxsconfigserver = nxsconfigserver
 
+        #: (:obj:`str`) nexus recorder selector server device name
+        self.nxsrecselector = nxsrecselector
+
         #: (:obj:`str`) datasource prefix
         self.dsprefix = dsprefix
+
+        #: (:obj:`str`) metadata script file name
+        self.metadatascript = metadatascript
 
         #: (:class:`tango.DeviceProxy`) self device proxy
         self.__dp = proxy
@@ -93,6 +109,10 @@ class DataSources(object):
         #: or :class:`nxsconfigserver.XMLConfigurator.XMLConfigurator`) \
         #:     configuration server proxy
         self.__configServer = None
+        #: (:class:`tango.DeviceProxy` \
+        #: or :class:`nxsrecconfig.Settings.Settings`) \
+        #:     configuration server proxy
+        self.__recSelector = None
         #: (:obj:`dict` <:obj:`str` , :obj:`str`> ) \
         #:    map of numpy types : NEXUS
         self.__npTn = {"float32": "NX_FLOAT32", "float64": "NX_FLOAT64",
@@ -111,6 +131,8 @@ class DataSources(object):
         self.__dsfac = {}
         self.__attr = {}
 
+        self.__userRecord = {"data": {}}
+
     def getConfigServer(self):
         if self.__configServer is not None:
             self.__configServer.open()
@@ -126,6 +148,20 @@ class DataSources(object):
                 self.__configServer.open()
                 self.__configServer.set_timeout_millis(10000)
                 return self.__configServer
+
+    def getRecSelector(self):
+        if self.__recSelector is not None:
+            return self.__recSelector
+        if not self.nxsrecselector:
+            self.nxsrecselector = TangoUtils.getDeviceName(
+                self.__db, "NXSRecSelector")
+        if self.nxsrecselector:
+            dps = TangoUtils.getProxies(
+                [self.nxsrecselector])
+            if dps:
+                self.__recSelector = dps[0]
+                self.__recSelector.set_timeout_millis(10000)
+                return self.__recSelector
 
     def addDataSources(self, dss=None):
         ta = time.time()
@@ -265,6 +301,8 @@ class DataSources(object):
         el = self.__elements[dsname]
         des = self.__description[dsname]
         try:
+            if hasattr(el.source, "setJSON"):
+                el.source.setJSON(self.__userRecord)
             vv = el.source.getData()
             # t3 = time.time()
             if vv is not None:
@@ -381,8 +419,41 @@ class DataSources(object):
         self.__olddescription = self.__description
         self.__description = dsdes
 
+        self.refreshUserData()
+
+    def refreshUserData(self):
+
+        rs = self.getRecSelector()
+
+        self.__userRecord["data"] = {}
+        msf = self.metadatascript
+        if rs is not None:
+            userdata = dict(json.loads(rs.userData or {}))
+            self.__userRecord["data"] = userdata
+            if not msf:
+                ms = rs.macroServer
+                try:
+                    msf = MSUtils.getEnv('MetadataScript', ms)
+                except Exception:
+                    pass
+        if msf:
+            if not os.path.exists(msf):
+                print("Error: %s does not exist" % msf)
+            else:
+                import importlib.util
+                spec = importlib.util.spec_from_file_location('', msf)
+                msm = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(msm)
+                ms = msm.main()
+                if not isinstance(ms, dict):
+                    print(
+                        "Error: bad output from %s" % msf)
+                else:
+                    self.__userRecord["data"].update(ms)
+
     def userData(self):
-        return ""
+        return json.dumps(self.__userRecord["data"] or {})
 
     def setUserData(self, udata):
-        return
+        dd = json.loads(udata)
+        self.__userRecord["data"].update(dd)
