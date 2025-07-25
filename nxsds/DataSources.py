@@ -130,6 +130,7 @@ class DataSources(object):
         self.__elements = {}
         self.__dsfac = {}
         self.__attr = {}
+        self.__pool = DataSourcePool()
 
         self.__userRecord = {"data": {}}
 
@@ -224,7 +225,7 @@ class DataSources(object):
         self.__elements[dsname] = el
         if "dstype" in des:
             ds = DataSourceFactory({"type": des["dstype"]}, el)
-            dsp = DataSourcePool()
+            dsp = self.__pool
             dcp = DecoderPool()
             ds.setDataSources(dsp)
             ds.setDecoders(dcp)
@@ -361,10 +362,10 @@ class DataSources(object):
         return ""
 
     def setCommonBlock(self, cblock):
-        return
+        self.__pool.common = dict(json.loads(cblock))
 
     def commonBlock(self):
-        return ""
+        return json.dumps(self.__pool.common or {})
 
     def details(self):
         if not self.__description:
@@ -372,6 +373,7 @@ class DataSources(object):
         return json.dumps(self.__description)
 
     def refresh(self):
+        self.__pool = DataSourcePool()
         dsdes = {}
         cs = self.getConfigServer()
         dsl = cs.availableDataSources()
