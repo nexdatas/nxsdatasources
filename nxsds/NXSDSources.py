@@ -101,8 +101,12 @@ class NXSDataSources(tango.LatestDeviceImpl):
             self.__ds = None
         self.__dp = self.__dp or tango.DeviceProxy(self.get_name())
         self.get_device_properties(self.get_device_class())
-        self.__ds = DS(self, self.NXSConfigServer or None, self.__dp,
-                       self.DSBlackList or [], self.DSPrefix or "")
+        self.__ds = DS(self, self.NXSConfigServer or None,
+                       self.__dp,
+                       self.DSBlackList or [],
+                       self.DSPrefix or "",
+                       self.NXSRecSelector or None,
+                       self.MetadataScript or "")
         self.__ds.addDataSources([])
         self.set_state(tango.DevState.ON)
 
@@ -342,6 +346,28 @@ class NXSDataSources(tango.LatestDeviceImpl):
             return False
         return True
 
+    def RefreshUserData(self):
+        """ RefreshUserData datasource details
+        """
+        self.debug_stream("In RefreshUserData()")
+        try:
+            self.set_state(tango.DevState.RUNNING)
+            self.__ds.refreshUserData()
+            self.set_state(tango.DevState.ON)
+        finally:
+            if self.get_state() == tango.DevState.RUNNING:
+                self.set_state(tango.DevState.ON)
+
+    def is_RefreshUserData_allowed(self):
+        """ RefreshUserData command State Machine
+
+        :returns: True if the operation allowed
+        :rtype: :obj:`bool`
+        """
+        if self.get_state() in [tango.DevState.RUNNING]:
+            return False
+        return True
+
     def UserData(self):
         """ provide user data dictionary
         :return: user data dictionary
@@ -408,6 +434,16 @@ class NXSDataSourcesClass(tango.DeviceClass):
         'NXSConfigServer':
             [tango.DevString,
              "NeXus configuration server",
+             [],
+             ],
+        'NXSRecSelector':
+            [tango.DevString,
+             "NXSRecSelector tango server",
+             [],
+             ],
+        'MetadataScript':
+            [tango.DevString,
+             "user data metadata python script file name",
              [],
              ],
         'DSPrefix':
